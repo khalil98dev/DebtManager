@@ -76,6 +76,7 @@ export 'src/features/invoices/view_models/invoice_form_state.dart';
 export 'src/features/invoices/view_models/invoice_form_view_model.dart';
 export 'src/features/invoices/view_models/invoice_list_state.dart';
 export 'src/features/invoices/view_models/invoice_list_view_model.dart';
+export 'src/features/invoices/utils/invoice_pdf_generator.dart';
 export 'src/features/invoices/widgets/invoice_form_dialog.dart';
 export 'src/features/invoices/widgets/invoice_print_preview_dialog.dart';
 

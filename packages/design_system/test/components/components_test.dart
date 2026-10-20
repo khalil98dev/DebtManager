@@ -258,5 +258,76 @@ void main() {
         expect(find.text('Debt Manager'), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'InvoicePrintPreviewDialog opens in View Mode first and supports Download PDF and Print Invoice',
+      (tester) async {
+        tester.view.physicalSize = const Size(1280, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final client = Client.create(
+          name: 'Stark Industries',
+          phone: '+1 555 9000',
+        );
+        final invoice = Invoice.create(
+          number: 'INV-PDF-100',
+          clientId: client.id,
+          currency: Currency.dzd,
+          lines: [
+            InvoiceLine.create(
+              description: 'Arc Reactor Maintenance',
+              quantity: 2,
+              unitPrice: Money(15000, Currency.dzd),
+            ),
+          ],
+        );
+
+        // Verify pure-Dart PDF bytes header
+        final pdfBytes = InvoicePdfGenerator.generatePdfBytes(
+          invoice: invoice,
+          client: client,
+          preparedByUser: 'Tony',
+          preparedByRole: 'Admin',
+        );
+        expect(String.fromCharCodes(pdfBytes.take(8)), equals('%PDF-1.4'));
+
+        await tester.pumpWidget(
+          CupertinoApp(
+            home: CupertinoPageScaffold(
+              child: InvoicePrintPreviewDialog(
+                invoice: invoice,
+                client: client,
+                printedByUser: 'Tony',
+                printedByRole: 'Admin',
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Starts in View Mode first with A4 Document preview
+        expect(find.text('VIEW MODE'), findsOneWidget);
+        expect(find.text('A4 Document'), findsOneWidget);
+        expect(find.text('Receipt View'), findsOneWidget);
+        expect(find.text('Stark Industries'), findsOneWidget);
+        expect(find.text('Arc Reactor Maintenance'), findsOneWidget);
+
+        // Both Download PDF and Print Invoice buttons are available
+        final downloadBtn = find.byKey(
+          const ValueKey('download_invoice_pdf_button'),
+        );
+        final printBtn = find.byKey(
+          const ValueKey('print_invoice_action_button'),
+        );
+        expect(downloadBtn, findsOneWidget);
+        expect(printBtn, findsOneWidget);
+
+        // Switch to Receipt View
+        await tester.tap(find.text('Receipt View'));
+        await tester.pumpAndSettle();
+        expect(find.text('DEBT MANAGER RECEIPT'), findsOneWidget);
+      },
+    );
   });
 }

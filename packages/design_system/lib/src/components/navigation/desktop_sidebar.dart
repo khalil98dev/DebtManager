@@ -38,8 +38,8 @@ class NavigationDestinationItem {
 }
 
 /// Senior-grade macOS-style collapsible/closable sidebar navigation shell
-/// with clean semantic squircle icons, live value pills, section categorization,
-/// and smooth micro-interactions.
+/// with butter-smooth progressive width & opacity choreography, clean semantic
+/// squircle icons, live value pills, and section categorization.
 class DesktopSidebar extends StatefulWidget {
   const DesktopSidebar({
     super.key,
@@ -97,12 +97,13 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
   Widget build(BuildContext context) {
     final isDark = CupertinoTheme.maybeBrightnessOf(context) == Brightness.dark;
     final collapsed = _effectiveCollapsed;
-    final currentWidth = collapsed ? widget.collapsedWidth : widget.width;
+    final targetWidth = collapsed ? widget.collapsedWidth : widget.width;
 
     return AnimatedContainer(
       duration: AppDurations.motionDuration(context, AppDurations.expand),
-      curve: AppDurations.easeOut,
-      width: currentWidth,
+      curve: AppDurations.standardCurve,
+      width: targetWidth,
+      clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
         color: AppColors.sidebar(context),
         border: Border(
@@ -112,148 +113,202 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
           ),
         ),
       ),
-      child: SafeArea(
-        left: false,
-        right: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header: Company branding, app identity & Collapse/Expand toggle
-            if (widget.header != null && !collapsed)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.md,
-                ),
-                child: widget.header!,
-              )
-            else
-              _buildHeader(context, isDark, collapsed),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final currentW = constraints.maxWidth;
+          // Threshold at 148px: above 148px we smoothly fade expanded content;
+          // below 148px we smoothly present the compact icon rail.
+          const threshold = 148.0;
+          final isCompact = currentW < threshold;
+          final expandSpan = (widget.width - threshold).clamp(1.0, 500.0);
+          final collapseSpan = (threshold - widget.collapsedWidth).clamp(
+            1.0,
+            500.0,
+          );
+          final expandOpacity = ((currentW - threshold) / expandSpan).clamp(
+            0.0,
+            1.0,
+          );
+          final compactOpacity = ((threshold - currentW) / collapseSpan).clamp(
+            0.0,
+            1.0,
+          );
 
-            // Navigation Items List
-            Expanded(
-              child: ListView.builder(
-                padding: EdgeInsets.symmetric(
-                  horizontal: collapsed ? AppSpacing.xs : AppSpacing.sm,
-                  vertical: AppSpacing.xs,
-                ),
-                itemCount: widget.destinations.length,
-                itemBuilder: (context, index) {
-                  final destination = widget.destinations[index];
-                  final isSelected = index == widget.selectedIndex;
-
-                  final currentSection = destination.section;
-                  final prevSection = index > 0
-                      ? widget.destinations[index - 1].section
-                      : null;
-                  final showSectionHeader =
-                      currentSection != null && currentSection != prevSection;
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (showSectionHeader) ...[
-                        if (index > 0)
-                          SizedBox(
-                            height: collapsed ? AppSpacing.sm : AppSpacing.md,
-                          ),
-                        if (collapsed)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.sm,
-                              vertical: AppSpacing.xxs,
-                            ),
-                            child: Container(
-                              height: 1.0,
-                              color: AppColors.separator(
-                                context,
-                              ).withValues(alpha: 0.55),
-                            ),
-                          )
-                        else
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              left: AppSpacing.sm,
-                              right: AppSpacing.sm,
-                              bottom: AppSpacing.xxs + 2,
-                              top: AppSpacing.xxs,
-                            ),
-                            child: Text(
-                              currentSection.toUpperCase(),
-                              style: AppTypography.caption2.copyWith(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.1,
-                                color: AppColors.textTertiary(context),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                      ],
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 3.5),
-                        child: _SidebarItem(
-                          destination: destination,
-                          isSelected: isSelected,
-                          isCollapsed: collapsed,
-                          onTap: () => widget.onDestinationSelected(index),
-                        ),
+          return SafeArea(
+            left: false,
+            right: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header: Company branding, app identity & Collapse/Expand toggle
+                if (widget.header != null && !isCompact)
+                  Opacity(
+                    opacity: expandOpacity,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.md,
                       ),
-                    ],
-                  );
-                },
-              ),
-            ),
+                      child: widget.header!,
+                    ),
+                  )
+                else
+                  _buildHeader(
+                    context,
+                    isDark: isDark,
+                    isCompact: isCompact,
+                    expandOpacity: expandOpacity,
+                    compactOpacity: compactOpacity,
+                  ),
 
-            // Footer: telemetry status & environment stats
-            _buildFooter(context, collapsed),
-          ],
-        ),
+                // Navigation Items List
+                Expanded(
+                  child: ListView.builder(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isCompact ? AppSpacing.xs : AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    itemCount: widget.destinations.length,
+                    itemBuilder: (context, index) {
+                      final destination = widget.destinations[index];
+                      final isSelected = index == widget.selectedIndex;
+
+                      final currentSection = destination.section;
+                      final prevSection = index > 0
+                          ? widget.destinations[index - 1].section
+                          : null;
+                      final showSectionHeader =
+                          currentSection != null &&
+                          currentSection != prevSection;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (showSectionHeader) ...[
+                            if (index > 0)
+                              SizedBox(
+                                height: isCompact
+                                    ? AppSpacing.sm
+                                    : AppSpacing.md,
+                              ),
+                            if (isCompact)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.sm,
+                                  vertical: AppSpacing.xxs,
+                                ),
+                                child: Container(
+                                  height: 1.0,
+                                  color: AppColors.separator(
+                                    context,
+                                  ).withValues(alpha: 0.55),
+                                ),
+                              )
+                            else
+                              Opacity(
+                                opacity: expandOpacity,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: AppSpacing.sm,
+                                    right: AppSpacing.sm,
+                                    bottom: AppSpacing.xxs + 2,
+                                    top: AppSpacing.xxs,
+                                  ),
+                                  child: Text(
+                                    currentSection.toUpperCase(),
+                                    style: AppTypography.caption2.copyWith(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.1,
+                                      color: AppColors.textTertiary(context),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                          ],
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 3.5),
+                            child: _SidebarItem(
+                              destination: destination,
+                              isSelected: isSelected,
+                              isCompact: isCompact,
+                              expandOpacity: expandOpacity,
+                              compactOpacity: compactOpacity,
+                              onTap: () => widget.onDestinationSelected(index),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+
+                // Footer: telemetry status & environment stats
+                _buildFooter(
+                  context,
+                  isCompact: isCompact,
+                  expandOpacity: expandOpacity,
+                  compactOpacity: compactOpacity,
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isDark, bool collapsed) {
-    if (collapsed) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xs,
-          vertical: AppSpacing.md,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10.0),
-              child: Image.asset(
-                'assets/icons/app_icon.png',
-                package: 'design_system',
-                width: 36.0,
-                height: 36.0,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const AppModernIcon(
-                      icon: CupertinoIcons.creditcard_fill,
-                      size: 36.0,
-                      iconSize: 18.0,
-                    ),
+  Widget _buildHeader(
+    BuildContext context, {
+    required bool isDark,
+    required bool isCompact,
+    required double expandOpacity,
+    required double compactOpacity,
+  }) {
+    if (isCompact) {
+      return Opacity(
+        opacity: compactOpacity,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: AppSpacing.md,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10.0),
+                child: Image.asset(
+                  'assets/icons/app_icon.png',
+                  package: 'design_system',
+                  width: 36.0,
+                  height: 36.0,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const AppModernIcon(
+                        icon: CupertinoIcons.creditcard_fill,
+                        size: 36.0,
+                        iconSize: 18.0,
+                      ),
+                ),
               ),
-            ),
-            if (widget.isCollapsible) ...[
-              const SizedBox(height: AppSpacing.xs),
-              AppIconButton(
-                key: const ValueKey('sidebar_toggle_button'),
-                icon: CupertinoIcons.sidebar_left,
-                size: 32.0,
-                iconSize: 16.0,
-                isCircle: false,
-                tooltip: 'Expand Sidebar',
-                onPressed: _toggleCollapsed,
-              ),
+              if (widget.isCollapsible) ...[
+                const SizedBox(height: AppSpacing.xs),
+                AppIconButton(
+                  key: const ValueKey('sidebar_toggle_button'),
+                  icon: CupertinoIcons.sidebar_left,
+                  size: 32.0,
+                  iconSize: 16.0,
+                  isCircle: false,
+                  tooltip: 'Expand Sidebar',
+                  onPressed: _toggleCollapsed,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       );
     }
@@ -295,30 +350,35 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Debt Manager',
-                    style: AppTypography.headline.copyWith(
-                      fontSize: 15.0,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.3,
-                      color: AppColors.textPrimary(context),
+              child: Opacity(
+                opacity: expandOpacity,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Debt Manager',
+                      style: AppTypography.headline.copyWith(
+                        fontSize: 15.0,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
+                        color: AppColors.textPrimary(context),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 1.0),
-                  Text(
-                    'Ledger & Receivables',
-                    style: AppTypography.caption2.copyWith(
-                      fontSize: 11.0,
-                      color: AppColors.textTertiary(context),
+                    const SizedBox(height: 1.0),
+                    Text(
+                      'Ledger & Receivables',
+                      style: AppTypography.caption2.copyWith(
+                        fontSize: 11.0,
+                        color: AppColors.textTertiary(context),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             if (widget.isCollapsible) ...[
@@ -339,40 +399,100 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
     );
   }
 
-  Widget _buildFooter(BuildContext context, bool collapsed) {
-    if (collapsed) {
+  Widget _buildFooter(
+    BuildContext context, {
+    required bool isCompact,
+    required double expandOpacity,
+    required double compactOpacity,
+  }) {
+    if (isCompact) {
       if (widget.collapsedFooter != null) {
-        return Padding(
+        return Opacity(
+          opacity: compactOpacity,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.md,
+            ),
+            child: widget.collapsedFooter!,
+          ),
+        );
+      }
+      return Opacity(
+        opacity: compactOpacity,
+        child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.xs,
             vertical: AppSpacing.md,
           ),
-          child: widget.collapsedFooter!,
-        );
-      }
-      return Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xs,
-          vertical: AppSpacing.md,
-        ),
-        child: Tooltip(
-          message: 'Local SQLite · Synced',
-          child: Center(
-            child: Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceSecondary(
-                  context,
-                ).withValues(alpha: 0.6),
-                borderRadius: AppRadii.smRadius,
-                border: Border.all(
-                  color: AppColors.border(context).withValues(alpha: 0.5),
-                  width: 0.8,
+          child: Tooltip(
+            message: 'Local SQLite · Synced',
+            child: Center(
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSecondary(
+                    context,
+                  ).withValues(alpha: 0.6),
+                  borderRadius: AppRadii.smRadius,
+                  border: Border.all(
+                    color: AppColors.border(context).withValues(alpha: 0.5),
+                    width: 0.8,
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.success(context),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.success(context).withValues(alpha: 0.6),
+                        blurRadius: 5.0,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              alignment: Alignment.center,
-              child: Container(
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (widget.footer != null) {
+      return Opacity(
+        opacity: expandOpacity,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: widget.footer!,
+        ),
+      );
+    }
+
+    return Opacity(
+      opacity: expandOpacity,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm + 2,
+            vertical: AppSpacing.xs + 2,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceSecondary(context).withValues(alpha: 0.6),
+            borderRadius: AppRadii.smRadius,
+            border: Border.all(
+              color: AppColors.border(context).withValues(alpha: 0.5),
+              width: 0.8,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(
@@ -383,75 +503,33 @@ class _DesktopSidebarState extends State<DesktopSidebar> {
                       color: AppColors.success(context).withValues(alpha: 0.6),
                       blurRadius: 5.0,
                     ),
+                    BoxShadow(
+                      color: AppColors.success(context).withValues(alpha: 0.25),
+                      spreadRadius: 2.5,
+                      blurRadius: 6.0,
+                    ),
                   ],
                 ),
               ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (widget.footer != null) {
-      return Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: widget.footer!,
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm + 2,
-          vertical: AppSpacing.xs + 2,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceSecondary(context).withValues(alpha: 0.6),
-          borderRadius: AppRadii.smRadius,
-          border: Border.all(
-            color: AppColors.border(context).withValues(alpha: 0.5),
-            width: 0.8,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.success(context),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.success(context).withValues(alpha: 0.6),
-                    blurRadius: 5.0,
+              const SizedBox(width: AppSpacing.xs + 2),
+              Expanded(
+                child: Text(
+                  'Local SQLite · Synced',
+                  style: AppTypography.caption2.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary(context),
                   ),
-                  BoxShadow(
-                    color: AppColors.success(context).withValues(alpha: 0.25),
-                    spreadRadius: 2.5,
-                    blurRadius: 6.0,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xs + 2),
-            Expanded(
-              child: Text(
-                'Local SQLite · Synced',
-                style: AppTypography.caption2.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            Icon(
-              CupertinoIcons.checkmark_alt,
-              size: 13.0,
-              color: AppColors.success(context),
-            ),
-          ],
+              Icon(
+                CupertinoIcons.checkmark_alt,
+                size: 13.0,
+                color: AppColors.success(context),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -462,13 +540,17 @@ class _SidebarItem extends StatefulWidget {
   const _SidebarItem({
     required this.destination,
     required this.isSelected,
-    required this.isCollapsed,
+    required this.isCompact,
+    required this.expandOpacity,
+    required this.compactOpacity,
     required this.onTap,
   });
 
   final NavigationDestinationItem destination;
   final bool isSelected;
-  final bool isCollapsed;
+  final bool isCompact;
+  final double expandOpacity;
+  final double compactOpacity;
   final VoidCallback onTap;
 
   @override
@@ -525,18 +607,18 @@ class _SidebarItemState extends State<_SidebarItem> {
     final scale = _isPressed ? 0.98 : (_isHovered ? 1.01 : 1.0);
     final valueText = widget.destination.effectiveValueText;
 
-    Widget iconBadge = _buildCleanIconContainer(
+    final iconBadge = _buildCleanIconContainer(
       context,
       icon: effectiveIconData,
       accent: effectiveAccent,
       isSelected: widget.isSelected,
       isHovered: _isHovered,
       isDark: isDark,
-      size: widget.isCollapsed ? 32.0 : 28.0,
+      size: widget.isCompact ? 32.0 : 28.0,
     );
 
     Widget content;
-    if (widget.isCollapsed) {
+    if (widget.isCompact) {
       content = Center(
         child: Stack(
           clipBehavior: Clip.none,
@@ -546,32 +628,35 @@ class _SidebarItemState extends State<_SidebarItem> {
               Positioned(
                 right: -5,
                 top: -4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4.5,
-                    vertical: 1.0,
-                  ),
-                  decoration: BoxDecoration(
-                    color: widget.isSelected
-                        ? effectiveAccent
-                        : AppColors.surface(context),
-                    borderRadius: AppRadii.pillRadius,
-                    border: Border.all(
-                      color: widget.isSelected
-                          ? CupertinoColors.white.withValues(alpha: 0.35)
-                          : effectiveAccent.withValues(alpha: 0.35),
-                      width: 0.8,
+                child: Opacity(
+                  opacity: widget.compactOpacity,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4.5,
+                      vertical: 1.0,
                     ),
-                  ),
-                  child: Text(
-                    valueText,
-                    style: AppTypography.caption2.copyWith(
-                      fontSize: 9.0,
-                      fontWeight: FontWeight.w700,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                    decoration: BoxDecoration(
                       color: widget.isSelected
-                          ? CupertinoColors.white
-                          : effectiveAccent,
+                          ? effectiveAccent
+                          : AppColors.surface(context),
+                      borderRadius: AppRadii.pillRadius,
+                      border: Border.all(
+                        color: widget.isSelected
+                            ? CupertinoColors.white.withValues(alpha: 0.35)
+                            : effectiveAccent.withValues(alpha: 0.35),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      valueText,
+                      style: AppTypography.caption2.copyWith(
+                        fontSize: 9.0,
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                        color: widget.isSelected
+                            ? CupertinoColors.white
+                            : effectiveAccent,
+                      ),
                     ),
                   ),
                 ),
@@ -603,26 +688,33 @@ class _SidebarItemState extends State<_SidebarItem> {
           iconBadge,
           const SizedBox(width: AppSpacing.sm),
           Expanded(
-            child: Text(
-              widget.destination.label,
-              style: AppTypography.subheadline.copyWith(
-                fontSize: 13.5,
-                fontWeight: widget.isSelected
-                    ? FontWeight.w600
-                    : FontWeight.w500,
-                color: effectiveTextColor,
+            child: Opacity(
+              opacity: widget.expandOpacity,
+              child: Text(
+                widget.destination.label,
+                style: AppTypography.subheadline.copyWith(
+                  fontSize: 13.5,
+                  fontWeight: widget.isSelected
+                      ? FontWeight.w600
+                      : FontWeight.w500,
+                  color: effectiveTextColor,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
           ),
           if (valueText != null) ...[
             const SizedBox(width: AppSpacing.xxs),
-            _buildValuePill(
-              context,
-              text: valueText,
-              accent: effectiveAccent,
-              isSelected: widget.isSelected,
-              isDark: isDark,
+            Opacity(
+              opacity: widget.expandOpacity,
+              child: _buildValuePill(
+                context,
+                text: valueText,
+                accent: effectiveAccent,
+                isSelected: widget.isSelected,
+                isDark: isDark,
+              ),
             ),
           ],
         ],
@@ -655,7 +747,7 @@ class _SidebarItemState extends State<_SidebarItem> {
             curve: AppDurations.easeOut,
             height: 42.0,
             padding: EdgeInsets.symmetric(
-              horizontal: widget.isCollapsed ? AppSpacing.xxs : AppSpacing.sm,
+              horizontal: widget.isCompact ? AppSpacing.xxs : AppSpacing.sm,
             ),
             decoration: BoxDecoration(
               color: rowBackgroundColor,
@@ -669,7 +761,7 @@ class _SidebarItemState extends State<_SidebarItem> {
       ),
     );
 
-    if (widget.isCollapsed) {
+    if (widget.isCompact) {
       final tooltipLabel = valueText != null
           ? '${widget.destination.label} ($valueText)'
           : widget.destination.label;
