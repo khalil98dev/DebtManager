@@ -1,6 +1,7 @@
 name: synco
 description: "A new Flutter package project."
 version: 0.0.1
+publish_to: 'none'
 homepage:
 
 environment:
@@ -14,6 +15,8 @@ dependencies:
     path: ../domain
   flutter:
     sdk: flutter
+  meta: ^1.18.0
+  uuid: ^4.6.0
 
 dev_dependencies:
   flutter_test:

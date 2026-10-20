@@ -1,0 +1,104 @@
+<scheme name="Visual Studio Dark" version="142" parent_scheme="Darcula">
+  <metaInfo>
+    <property name="created">2026-10-19</property>
+    <property name="description">Visual Studio style syntax highlighting</property>
+  </metaInfo>
+  <colors>
+    <option name="CARET_ROW_COLOR" value="0F0F0F" />
+    <option name="CONSOLE_BACKGROUND_KEY" value="1E1E1E" />
+    <option name="GUTTER_BACKGROUND" value="1E1E1E" />
+    <option name="INDENT_GUIDE" value="333333" />
+    <option name="LINE_NUMBERS_COLOR" value="2B91AF" />
+    <option name="SELECTION_BACKGROUND" value="264F78" />
+  </colors>
+  <attributes>
+    <option name="TEXT">
+      <value>
+        <option name="FOREGROUND" value="D4D4D4" />
+        <option name="BACKGROUND" value="1E1E1E" />
+      </value>
+    </option>
+    <!-- Keywords: abstract, interface, class, implements -->
+    <option name="DEFAULT_KEYWORD">
+      <value>
+        <option name="FOREGROUND" value="569CD6" />
+        <option name="FONT_TYPE" value="0" />
+      </value>
+    </option>
+    <!-- Types, Classes & Interfaces: Future, Client, bool, String -->
+    <option name="DEFAULT_CLASS_NAME">
+      <value>
+        <option name="FOREGROUND" value="4EC9B0" />
+      </value>
+    </option>
+    <option name="DEFAULT_INTERFACE_NAME">
+      <value>
+        <option name="FOREGROUND" value="4EC9B0" />
+      </value>
+    </option>
+    <option name="DART_CLASS">
+      <value>
+        <option name="FOREGROUND" value="4EC9B0" />
+      </value>
+    </option>
+    <option name="DART_CONSTRUCTOR">
+      <value>
+        <option name="FOREGROUND" value="4EC9B0" />
+      </value>
+    </option>
+    <!-- Methods & Functions: getByName, existsByName -->
+    <option name="DEFAULT_FUNCTION_DECLARATION">
+      <value>
+        <option name="FOREGROUND" value="DCDCAA" />
+      </value>
+    </option>
+    <option name="DEFAULT_FUNCTION_CALL">
+      <value>
+        <option name="FOREGROUND" value="DCDCAA" />
+      </value>
+    </option>
+    <option name="DEFAULT_INSTANCE_METHOD">
+      <value>
+        <option name="FOREGROUND" value="DCDCAA" />
+      </value>
+    </option>
+    <!-- Parameters & Variables -->
+    <option name="DEFAULT_PARAMETER">
+      <value>
+        <option name="FOREGROUND" value="9CDCFE" />
+      </value>
+    </option>
+    <option name="DEFAULT_LOCAL_VARIABLE">
+      <value>
+        <option name="FOREGROUND" value="9CDCFE" />
+      </value>
+    </option>
+    <option name="DEFAULT_IDENTIFIER">
+      <value>
+        <option name="FOREGROUND" value="D4D4D4" />
+      </value>
+    </option>
+    <!-- Literals & Strings -->
+    <option name="DEFAULT_STRING">
+      <value>
+        <option name="FOREGROUND" value="CE9178" />
+      </value>
+    </option>
+    <option name="DEFAULT_NUMBER">
+      <value>
+        <option name="FOREGROUND" value="B5CEA8" />
+      </value>
+    </option>
+    <!-- Comments -->
+    <option name="DEFAULT_LINE_COMMENT">
+      <value>
+        <option name="FOREGROUND" value="57A64A" />
+      </value>
+    </option>
+    <option name="DEFAULT_BLOCK_COMMENT">
+      <value>
+        <option name="FOREGROUND" value="57A64A" />
+      </value>
+    </option>
+  </attributes>
+</scheme>

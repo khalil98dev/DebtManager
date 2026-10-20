@@ -1,0 +1,39 @@
+<code_scheme name="DotNet Style" version="173">
+  <!-- Dart Specific Style -->
+  <DartCodeStyleSettings>
+    <option name="ALIGN_MULTILINE_EXPRESSIONS" value="true" />
+  </DartCodeStyleSettings>
+  <codeStyleSettings language="Dart">
+    <option name="RIGHT_MARGIN" value="120" />
+    <option name="KEEP_LINE_BREAKS" value="true" />
+    <option name="KEEP_FIRST_COLUMN_COMMENT" value="false" />
+    
+    <!-- Allman / C# Brace Placement (Next Line) -->
+    <option name="CLASS_BRACE_STYLE" value="2" />
+    <option name="METHOD_BRACE_STYLE" value="2" />
+    <option name="LAMBDA_BRACE_STYLE" value="2" />
+    
+    <!-- Spacing around operators and identifiers -->
+    <option name="SPACE_AROUND_ASSIGNMENT_OPERATORS" value="true" />
+    <option name="SPACE_AROUND_LOGICAL_OPERATORS" value="true" />
+    <option name="SPACE_AROUND_EQUALITY_OPERATORS" value="true" />
+    <option name="SPACE_AROUND_RELATIONAL_OPERATORS" value="true" />
+    <option name="SPACE_AROUND_ADDITIVE_OPERATORS" value="true" />
+    <option name="SPACE_AROUND_MULTIPLICATIVE_OPERATORS" value="true" />
+    <option name="SPACE_BEFORE_METHOD_CALL_PARENTHESES" value="false" />
+    <option name="SPACE_BEFORE_METHOD_PARENTHESES" value="false" />
+    <option name="SPACE_BEFORE_CLASS_LBRACE" value="true" />
+    <option name="SPACE_BEFORE_METHOD_LBRACE" value="true" />
+    <option name="SPACE_BEFORE_IF_LBRACE" value="true" />
+    <option name="SPACE_BEFORE_WHILE_LBRACE" value="true" />
+    <option name="SPACE_BEFORE_FOR_LBRACE" value="true" />
+    
+    <!-- Indentation standard: 4 spaces -->
+    <indentOptions>
+      <option name="INDENT_SIZE" value="4" />
+      <option name="CONTINUATION_INDENT_SIZE" value="4" />
+      <option name="TAB_SIZE" value="4" />
+      <option name="USE_TAB_CHARACTER" value="false" />
+    </indentOptions>
+  </codeStyleSettings>
+</code_scheme>

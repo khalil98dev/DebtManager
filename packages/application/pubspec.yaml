@@ -1,6 +1,7 @@
 name: application
 description: "A new Flutter package project."
 version: 0.0.1
+publish_to: 'none'
 homepage:
 
 environment:
@@ -8,10 +9,9 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
+  meta: ^1.16.0
   domain:
     path: ../domain
-  flutter:
-    sdk: flutter
 
 dev_dependencies:
   flutter_test:
